@@ -10,6 +10,7 @@ fn create_app() -> Router {
     Router::new()
         .merge(router::health::router())
         .merge(router::mods::list::router())
+        .merge(router::mods::download::router())
 }
 
 #[tokio::main]
