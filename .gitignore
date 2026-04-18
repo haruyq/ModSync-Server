@@ -3,3 +3,4 @@
 /mods
 /deps
 *.env
+*.txt
