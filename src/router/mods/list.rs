@@ -7,10 +7,12 @@ use tokio::fs;
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
 
+use crate::utils;
 use crate::config;
 
 pub fn router() -> Router {
-    Router::new().route("/mods/list", get(list_mods))
+    Router::new()
+        .route("/mods/list", get(list_mods))
 }
 
 async fn get_sha256(path: &str) -> std::io::Result<String> {
@@ -33,9 +35,12 @@ async fn scan_dir(dir: PathBuf) -> Vec<json::Value> {
     if let Ok(mut entries) = fs::read_dir(dir).await {
         while let Ok(Some(entry)) = entries.next_entry().await {
             let path = entry.path();
+            let needless = utils::is_needless(path.clone()).await;
+            println!("Scanned {:?}, needless: {}", path, needless);
 
             if path.is_file()
                 && path.extension().and_then(|e| e.to_str()) == Some("jar")
+                && !needless
             {
                 let sha256 = get_sha256(path.to_str().unwrap_or(""))
                     .await

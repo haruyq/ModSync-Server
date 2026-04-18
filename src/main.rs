@@ -1,6 +1,7 @@
 use axum::Router;
 use axum::middleware as mw;
 
+mod utils;
 mod config;
 mod router {
     pub mod health;
