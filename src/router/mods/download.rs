@@ -14,17 +14,30 @@ pub fn router() -> Router {
     Router::new().route("/mods/{name}", get(download))
 }
 
-async fn download(Path(file): Path<String>) -> Result<Response, StatusCode> {
-    let config = crate::config::load_config();
-    let path = PathBuf::from(config.mods_dir).join(&file);
+async fn resolve_download_path(file: &str, mods_dir: &str, deps_dir: &str) -> Option<PathBuf> {
+    let candidates = [
+        PathBuf::from(mods_dir).join(file),
+        PathBuf::from(deps_dir).join(file),
+    ];
 
-    if !path.exists() || utils::is_needless(path.clone()).await {
-        return Err(StatusCode::NOT_FOUND);
+    for path in candidates {
+        if path.exists() && !utils::is_needless(path.clone()).await {
+            return Some(path);
+        }
     }
 
+    None
+}
+
+async fn download(Path(file): Path<String>) -> Result<Response, StatusCode> {
     if file.contains("..") {
         return Err(StatusCode::BAD_REQUEST);
     }
+
+    let config = crate::config::load_config();
+    let Some(path) = resolve_download_path(&file, &config.mods_dir, &config.deps_dir).await else {
+        return Err(StatusCode::NOT_FOUND);
+    };
 
     let opened = File::open(path).await.map_err(|_| StatusCode::NOT_FOUND)?;
     let stream = ReaderStream::new(opened);
