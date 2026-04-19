@@ -21,7 +21,7 @@ async fn resolve_download_path(file: &str, mods_dir: &str, deps_dir: &str) -> Op
     ];
 
     for path in candidates {
-        if path.exists() && !utils::is_needless(path.clone()).await {
+        if path.exists() && !utils::is_needless(&path).await {
             return Some(path);
         }
     }

@@ -1,25 +1,30 @@
-use tokio::fs;
-use std::path::PathBuf;
+use std::path::Path;
+use tokio::fs::File;
+use tokio::io::{AsyncBufReadExt, BufReader};
 
 const NEEDLESS_LIST_PATH: &str = "./needless.txt";
 
-async fn load_needless_list() -> Vec<String> {
-    let needless_list = fs::read_to_string(NEEDLESS_LIST_PATH).await.unwrap_or_default();
-
-    needless_list
-        .lines()
-        .map(|line| line.trim())
-        .filter(|line| !line.is_empty() && !line.starts_with('#'))
-        .map(|line| line.to_string())
-        .collect()
-}
-
-pub async fn is_needless(path: PathBuf) -> bool {
-    let needless_list = load_needless_list().await;
+pub async fn is_needless(path: &Path) -> bool {
     let path_str = path.to_string_lossy();
     let file_name = path.file_name().and_then(|name| name.to_str());
 
-    needless_list.iter().any(|line| {
-        line == path_str.as_ref() || file_name.map(|name| name == line).unwrap_or(false)
-    })
+    if let Ok(needless_list) = File::open(NEEDLESS_LIST_PATH).await {
+        let needless_list = BufReader::new(needless_list);
+
+        let mut lines = needless_list.lines();
+
+        while let Ok(Some(line)) = lines.next_line().await {
+            let line = line.trim();
+
+            if line.starts_with('#') {
+                continue;
+            }
+
+            if line == path_str || file_name.map(|name| name == line).unwrap_or(false) {
+                return true;
+            }
+        }
+    }
+
+    false
 }
