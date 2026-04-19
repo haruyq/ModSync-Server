@@ -28,5 +28,7 @@ async fn main() {
         format!("0.0.0.0:{}", config.port)
     ).await.unwrap();
 
+    println!("Listening on port: {}", config.port);
+
     axum::serve(listener, app).await.unwrap();
 }

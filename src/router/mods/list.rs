@@ -36,7 +36,6 @@ async fn scan_dir(dir: PathBuf) -> Vec<json::Value> {
         while let Ok(Some(entry)) = entries.next_entry().await {
             let path = entry.path();
             let needless = utils::is_needless(path.clone()).await;
-            println!("Scanned {:?}, needless: {}", path, needless);
 
             if path.is_file()
                 && path.extension().and_then(|e| e.to_str()) == Some("jar")
